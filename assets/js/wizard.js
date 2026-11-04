@@ -161,8 +161,8 @@
       if (trap && trap.value) { sb.dataset.s = 'ok'; setTimeout(function () { renderDone(nm); }, reduce ? 0 : 900); return; } // bot: pretend success, send nothing
       var payload = { full_name: nm, phone_number: raw, page_source: p.src, process: p.name, answers: st.ans.join(' | ') };
       var toSheet = fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-      // Hebrew paths also go to SmartNPV through our server (the API key must never reach the browser). The Portuguese path stays sheet-only.
-      var toSmart = PT ? Promise.resolve() : fetch('/api/smart-lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), keepalive: true }).catch(function () {});
+      // Every path also goes to SmartNPV through our server (the API key must never reach the browser).
+      var toSmart = fetch('/api/smart-lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), keepalive: true }).catch(function () {});
       Promise.all([toSheet, toSmart]).then(function () {
         if (typeof window.gtag === 'function') window.gtag('event', 'generate_lead', { event_category: 'form', event_label: p.src });
         sb.dataset.s = 'ok'; setTimeout(function () { renderDone(nm); }, reduce ? 0 : 900);

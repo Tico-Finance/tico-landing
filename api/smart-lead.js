@@ -48,6 +48,14 @@ function normalizePhone(raw) {
   return /^0\d{8,9}$/.test(d) ? d : null;
 }
 
+// Brazilian leads (wizard on /br/) type a local or international number. Keep it international: +55...
+function normalizeBrPhone(raw) {
+  let d = String(raw || '').replace(/[^\d]/g, '');
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.length === 10 || d.length === 11) d = '55' + d; // DDD + number, no country code
+  return d.length >= 11 && d.length <= 15 ? '+' + d : null;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method' });
   if (!allowedOrigin(req)) { console.log('smart-lead blocked: origin', req.headers.origin); return res.status(403).json({ ok: false, error: 'origin' }); }
@@ -61,8 +69,8 @@ module.exports = async function handler(req, res) {
   console.log('smart-lead request', req.headers.origin || '-');
   const body = typeof req.body === 'string' ? safeParse(req.body) : (req.body || {});
   const name = String(body.full_name || '').trim().slice(0, 100);
-  const phone = normalizePhone(body.phone_number);
   const source = String(body.page_source || '').trim().slice(0, 60);
+  const phone = source === 'br-wizard' ? normalizeBrPhone(body.phone_number) : normalizePhone(body.phone_number);
   if (body.website) { console.log('smart-lead blocked: honeypot filled'); return res.status(200).json({ ok: true }); } // pretend success
   if (name.length < 2 || !phone) { console.log('smart-lead rejected: invalid input'); return res.status(400).json({ ok: false, error: 'invalid' }); }
   if (seenPhone(phone)) { console.log('smart-lead skipped: duplicate phone', source); return res.status(200).json({ ok: true, duplicate: true }); } // already sent today
