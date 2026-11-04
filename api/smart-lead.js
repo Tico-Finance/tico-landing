@@ -74,7 +74,9 @@ module.exports = async function handler(req, res) {
   let campaign = process.env.SMART_CAMPAIGN_ID || '';
   try {
     const map = JSON.parse(process.env.SMART_CAMPAIGN_MAP || '{}');
-    if (map[source]) campaign = String(map[source]);
+    // the homepage wizard sends home-investors / home-upgraders: reuse the page's campaign
+    const key2 = map[source] ? source : source.replace(/^home-/, '');
+    if (map[key2]) campaign = String(map[key2]);
   } catch (e) { /* ignore bad map */ }
 
   const form = new URLSearchParams();
@@ -85,7 +87,10 @@ module.exports = async function handler(req, res) {
   form.set('params[phone_1]', phone);
   if (process.env.SMART_STATUS_ID) form.set('params[status]', process.env.SMART_STATUS_ID);
   if (campaign) form.set('params[campaign]', campaign);
-  form.set('params[note_details]', 'ליד מהאתר' + (source ? ' (' + source + ')' : ''));
+  const process_ = String(body.process || '').trim().slice(0, 80);
+  const answers = String(body.answers || '').trim().slice(0, 300);
+  form.set('params[note_details]', 'ליד מהאתר' + (source ? ' (' + source + ')' : '') +
+    (process_ ? '\nמסלול: ' + process_ : '') + (answers ? '\nתשובות: ' + answers : ''));
 
   try {
     const r = await fetch('https://www.snpv.co.il/api/v2/clients/create', {
