@@ -50,21 +50,22 @@ function normalizePhone(raw) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'method' });
-  if (!allowedOrigin(req)) return res.status(403).json({ ok: false, error: 'origin' });
+  if (!allowedOrigin(req)) { console.log('smart-lead blocked: origin', req.headers.origin); return res.status(403).json({ ok: false, error: 'origin' }); }
 
   const key = process.env.SMART_API_KEY;
   if (!key) return res.status(500).json({ ok: false, error: 'not_configured' });
 
   const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
-  if (tooMany(ip)) return res.status(429).json({ ok: false, error: 'rate' });
+  if (tooMany(ip)) { console.log('smart-lead blocked: rate limit', ip); return res.status(429).json({ ok: false, error: 'rate' }); }
 
+  console.log('smart-lead request', req.headers.origin || '-');
   const body = typeof req.body === 'string' ? safeParse(req.body) : (req.body || {});
   const name = String(body.full_name || '').trim().slice(0, 100);
   const phone = normalizePhone(body.phone_number);
   const source = String(body.page_source || '').trim().slice(0, 60);
-  if (body.website) return res.status(200).json({ ok: true }); // honeypot: pretend success
-  if (name.length < 2 || !phone) return res.status(400).json({ ok: false, error: 'invalid' });
-  if (seenPhone(phone)) return res.status(200).json({ ok: true, duplicate: true }); // already sent today
+  if (body.website) { console.log('smart-lead blocked: honeypot filled'); return res.status(200).json({ ok: true }); } // pretend success
+  if (name.length < 2 || !phone) { console.log('smart-lead rejected: invalid input'); return res.status(400).json({ ok: false, error: 'invalid' }); }
+  if (seenPhone(phone)) { console.log('smart-lead skipped: duplicate phone', source); return res.status(200).json({ ok: true, duplicate: true }); } // already sent today
 
   const parts = name.split(/\s+/);
   const first = parts.shift();
