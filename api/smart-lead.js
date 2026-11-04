@@ -65,7 +65,9 @@ module.exports = async function handler(req, res) {
       signal: AbortSignal.timeout(8000),
     });
     const text = await r.text();
-    if (!r.ok) {
+    // SmartNPV can answer HTTP 200 with a failure in the body, so check both.
+    const data = safeParse(text);
+    if (!r.ok || data.response === false || data.status === false) {
       console.error('SmartNPV error', r.status, text.slice(0, 300));
       return res.status(502).json({ ok: false, error: 'upstream' });
     }
