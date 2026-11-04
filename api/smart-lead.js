@@ -9,6 +9,30 @@
 
 const ALLOWED_HOSTS = ['ticofinance.co.il', 'www.ticofinance.co.il'];
 
+// Best-effort abuse limits. Memory is per serverless instance, so this stops casual spam
+// and double-submits, not a determined attacker. SmartNPV itself has no duplicate check.
+const hits = new Map();   // ip -> [timestamps]
+const phones = new Map(); // phone -> timestamp
+const IP_LIMIT = 5, IP_WINDOW = 10 * 60 * 1000, PHONE_WINDOW = 24 * 60 * 60 * 1000;
+
+function tooMany(ip) {
+  const now = Date.now();
+  const arr = (hits.get(ip) || []).filter((t) => now - t < IP_WINDOW);
+  arr.push(now);
+  hits.set(ip, arr);
+  if (hits.size > 5000) hits.clear();
+  return arr.length > IP_LIMIT;
+}
+
+function seenPhone(phone) {
+  const now = Date.now();
+  const t = phones.get(phone);
+  if (t && now - t < PHONE_WINDOW) return true;
+  phones.set(phone, now);
+  if (phones.size > 5000) phones.clear();
+  return false;
+}
+
 function allowedOrigin(req) {
   const o = req.headers.origin || '';
   if (!o) return true; // same-origin requests may omit Origin
@@ -31,11 +55,16 @@ module.exports = async function handler(req, res) {
   const key = process.env.SMART_API_KEY;
   if (!key) return res.status(500).json({ ok: false, error: 'not_configured' });
 
+  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
+  if (tooMany(ip)) return res.status(429).json({ ok: false, error: 'rate' });
+
   const body = typeof req.body === 'string' ? safeParse(req.body) : (req.body || {});
   const name = String(body.full_name || '').trim().slice(0, 100);
   const phone = normalizePhone(body.phone_number);
   const source = String(body.page_source || '').trim().slice(0, 60);
+  if (body.website) return res.status(200).json({ ok: true }); // honeypot: pretend success
   if (name.length < 2 || !phone) return res.status(400).json({ ok: false, error: 'invalid' });
+  if (seenPhone(phone)) return res.status(200).json({ ok: true, duplicate: true }); // already sent today
 
   const parts = name.split(/\s+/);
   const first = parts.shift();
@@ -69,12 +98,14 @@ module.exports = async function handler(req, res) {
     const data = safeParse(text);
     if (!r.ok || data.response === false || data.status === false) {
       console.error('SmartNPV error', r.status, text.slice(0, 300));
+      phones.delete(phone);
       return res.status(502).json({ ok: false, error: 'upstream' });
     }
     console.log('SmartNPV lead created', source, text.slice(0, 200));
     return res.status(200).json({ ok: true });
   } catch (e) {
     console.error('SmartNPV request failed', e && e.message);
+    phones.delete(phone);
     return res.status(502).json({ ok: false, error: 'upstream' });
   }
 };

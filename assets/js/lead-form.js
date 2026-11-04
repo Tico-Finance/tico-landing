@@ -16,6 +16,12 @@
     if (ok && !D.getElementById('consent').checked) { ok = false; box.textContent = 'סמנו את אישור הפרטיות כדי להמשיך'; box.style.display = 'block'; }
     if (!ok) return;
     sb.dataset.s = 'loading';
+    var trap = D.getElementById('website');
+    if (trap && trap.value) { // bots fill the hidden field; humans never see it. Pretend success, send nothing.
+      sb.dataset.s = 'ok';
+      setTimeout(function () { window.location.href = '/thank-you.html'; }, reduce ? 0 : 900);
+      return;
+    }
     var payload = JSON.stringify({ full_name: nm, phone_number: raw, page_source: form.getAttribute('data-source') });
     // Apps Script stays as the backup record; SmartNPV is fed through our own server (the API key must never reach the browser).
     var toSheet = fetch(URL_, { method: 'POST', mode: 'no-cors', body: payload });
