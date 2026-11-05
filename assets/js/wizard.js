@@ -144,7 +144,7 @@
       '<div class="fld"><label for="nm">' + S.nm + '</label><input id="nm" autocomplete="name" placeholder="' + S.nmPh + '"><div class="err" id="nmE"></div></div>' +
       '<div class="fld"><label for="ph">' + S.ph + '</label><input id="ph" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" placeholder="' + S.phPh + '"><div class="err" id="phE"></div></div>' +
       '<label class="consent"><input type="checkbox" id="cs"><span>' + S.consent + '<a href="' + S.privacyHref + '">' + S.privacy + '</a></span></label>' +
-      '<input type="text" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">' +
+      '<input type="text" id="website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none">' +
       '<button class="sbm" id="sub" data-s="idle" type="submit"><span class="l">' + S.send + '</span><span class="ld"><svg class="spin" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="9" opacity=".3"/><path d="M12 3a9 9 0 0 1 9 9"/></svg></span><span class="ok"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path class="ck-draw" d="M5 12l5 5 9-10"/></svg>' + S.sent + '</span></button></form>' +
       '<div class="alt-wa"><a class="wbtn" href="' + waHref(p) + '" target="_blank" rel="noopener"><span class="g">' + I.wa + '</span><span>' + p.waLbl + '<small>' + p.waSub + '</small></span></a></div>';
     focusHead();
