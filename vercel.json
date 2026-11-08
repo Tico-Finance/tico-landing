@@ -39,7 +39,7 @@
       ]
     },
     {
-      "source": "/investor-type/(learn|meeting|pro)(/?)(.*)",
+      "source": "/investor-type/(learn|meeting|strategy|pro)(/?)(.*)",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
       ]

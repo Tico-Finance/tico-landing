@@ -4,9 +4,12 @@ window.TICO_FUNNEL = {
   draft: true,
   // Link from the card-processing company's hosted payment page (leave empty until it exists).
   paymentUrl: '',
+  // Paid 45-minute strategy session (350 + VAT): hosted payment page link.
+  strategyPaymentUrl: '',
+  strategyPrice: '350',
   // Booking page for the fit meeting (leave empty to use the short request form).
   bookingUrl: '',
-  courseName: 'שם הקורס (להחלטה)',
+  courseName: 'Masterclass: אסטרטגיות מימון למשקיעי נדל"ן',
   coursePrice: '297',
   // Default YouTube destination; replace per type/topic when the playlists exist.
   youtube: 'https://youtube.com/playlist?list=PLTERUJJXsujA',

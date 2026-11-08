@@ -94,5 +94,16 @@
     track('funnel_view', { page: 'meeting', quiz_type: C.type || '', src: C.src || '' });
   }
 
+  /* ---------- strategy session ---------- */
+  if (page === 'strategy') {
+    $('sPrice').textContent = F.strategyPrice || '350';
+    var sb2 = $('stratBtn'), sl = $('stratLabel');
+    if (F.strategyPaymentUrl && F.draft === false) {
+      sb2.href = F.strategyPaymentUrl; sb2.removeAttribute('aria-disabled'); sl.textContent = 'לתשלום ולתיאום הפגישה';
+      sb2.addEventListener('click', function () { track('begin_checkout', { event_category: 'strategy', value: Number(F.strategyPrice) || 0, currency: 'ILS', src: C.src || '' }); });
+    } else { sb2.addEventListener('click', function (e) { e.preventDefault(); }); }
+    track('funnel_view', { page: 'strategy', src: C.src || '' });
+  }
+
   if (page === 'pro') track('funnel_view', { page: 'pro', src: C.src || '' });
 })();
