@@ -33,6 +33,24 @@
       ]
     },
     {
+      "source": "/course(/?)(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    },
+    {
+      "source": "/investor-type/(learn|meeting|pro)(/?)(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow" }
+      ]
+    },
+    {
+      "source": "/api/course-(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
       "source": "/card/(.*)\\.vcf",
       "headers": [
         { "key": "Content-Type", "value": "text/vcard; charset=utf-8" },

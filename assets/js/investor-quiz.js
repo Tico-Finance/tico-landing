@@ -1,11 +1,9 @@
-/* "What kind of investor are you?" quiz. Six questions, a scored result, and a lead form that posts to the same Apps Script endpoint as the other pages. */
+/* "What kind of investor are you?" quiz. Seven questions, a scored result, then four "next step" questions that route to learn / course / meeting / professional pages. */
 (function () {
   'use strict';
   var D = document, stage = D.getElementById('stage');
   if (!stage) return;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxPxMs-PTgr2iFpx7M-izBzzm5-UBwpmryeHsSl8LvdRNOVksgrV63PPUyYTRwp76aTZg/exec';
-  var WA = '972507700322';
   var stepTxt = D.getElementById('stepTxt'), barFill = D.getElementById('barFill'), backBtn = D.getElementById('backBtn');
 
   var TYPES = {
@@ -126,7 +124,22 @@
   var ARW = '<svg class="ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
   var CK = '<svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>';
   var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>';
-  var WAI = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.2 13.9c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.2z"/></svg>';
+
+
+  var NEXTQ = [
+    { k: 'eq', q: 'מה ההון העצמי שיש לכם לעסקה?', o: [['lt100', 'עד 100 אלף'], ['100-300', '100 עד 300 אלף'], ['300-500', '300 עד 500 אלף'], ['gt500', 'מעל 500 אלף'], ['skip', 'מעדיפים לא לציין']] },
+    { k: 'stage', q: 'איפה אתם בתהליך?', o: [['curious', 'רק מתעניינים בנדל"ן להשקעה'], ['direction', 'יש לי כיוון ואני בוחן/ת אותו'], ['bank', 'בדקתי כבר מימון מול בנק'], ['deal', 'אני בעסקה כרגע']] },
+    { k: 'support', q: 'מה הכי יעזור לכם עכשיו?', o: [['alone', 'להמשיך ללמוד בעצמי'], ['course', 'ללמוד את השיטה בקורס קצר, עם כלים מעשיים'], ['guided', 'ליווי אישי מהחלום ועד המפתח']] },
+    { k: 'field', q: 'מה הקשר שלכם לתחום?', o: [['investor', 'משקיע/ת פרטי/ת'], ['upgrader', 'משפר/ת דיור ששוקל/ת להשקיע'], ['planning', 'מתכנן/ת להשקיע'], ['pro', 'עובד/ת בתחום (יועץ, מתווך, בנקאי ועוד)'], ['other', 'אחר']] }
+  ];
+
+  function lookHtml(key) {
+    var L = window.TICO_CONTENT && window.TICO_CONTENT.LOOK && window.TICO_CONTENT.LOOK[key];
+    if (!L) return '';
+    return '<div class="rbox"><h3 class="rh">סוגי עסקאות שפרופיל כזה בדרך כלל בוחן</h3><ul class="sum">' +
+      L.look.map(function (x) { return '<li>' + CHECK + '<span>' + esc(x) + '</span></li>'; }).join('') + '</ul><p>' + esc(L.check) + '</p>' +
+      '<p class="mini">זה מידע כללי ללמידה. הוא לא המלצה לקנות נכס מסוים ולא התאמה אישית למצבכם.</p></div>';
+  }
 
   var idx = 0, answers = [], orders = [], result = null;
   var meter = null;
@@ -258,11 +271,6 @@
     return { total: total, ranked: ranked };
   }
 
-  function waHref(t, second) {
-    var msg = 'היי צ\'יקו, עשיתי את השאלון "איזה סוג משקיע אתה" ויצאתי: ' + t.name + ' (במקום שני: ' + second.short + '). אשמח לבדוק איך זה נראה אצלי במספרים.';
-    return 'https://wa.me/' + WA + '?text=' + encodeURIComponent(msg);
-  }
-
   /* The three answers that pushed hardest toward the winning type, in the visitor's own words. */
   function reasons(key) {
     return answers.map(function (a, i) { return { why: a.why, label: a.label, v: (a.w[key] || 0) }; })
@@ -271,7 +279,7 @@
 
   function finish() {
     var c = compute(); result = c;
-    var key = c.ranked[0], t = TYPES[key], second = TYPES[c.ranked[1]];
+    var key = c.ranked[0], t = TYPES[key];
     D.getElementById('prog').hidden = true; if (meter) meter.hidden = true;
     var max = Math.max.apply(null, ORDER.map(function (k) { return c.total[k]; }).concat([1]));
     var fit = c.ranked.map(function (k, n) {
@@ -286,15 +294,15 @@
       '<div class="rbox"><h3 class="rh">איך המשכנתה בנויה בדרך כלל</h3><p>' + esc(t.mort) + '</p></div>' +
       '<div class="rbox warn"><h3 class="rh">הסיכון המרכזי</h3><p>' + esc(t.risk) + '</p></div>' +
       '<h3 class="rh">ההתאמה שלכם לכל הסוגים</h3><div class="fits">' + fit + '</div>' +
-      '<div class="rlead"><h3 class="q">רוצים שנבדוק את זה על העסקה שלכם?</h3><p class="rsub">השאירו פרטים ואחזור אליכם. בלי עלות ובלי התחייבות.</p>' +
-      '<form class="form" id="lead" novalidate>' +
-      '<div class="fld"><label for="nm">שם מלא</label><input id="nm" autocomplete="name" placeholder="ישראל ישראלי"><div class="err" id="nmE"></div></div>' +
-      '<div class="fld"><label for="ph">טלפון</label><input id="ph" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" placeholder="050-0000000"><div class="err" id="phE"></div></div>' +
-      '<label class="consent"><input type="checkbox" id="cs"><span>אני מאשר/ת קבלת מידע מ-TICO FINANCE בהתאם ל<a href="/privacy.html">מדיניות הפרטיות</a></span></label>' +
-      '<button class="sbm" id="sub" data-s="idle" type="submit"><span class="l">שלחו לי ניתוח מותאם</span><span class="ld"><svg class="spin" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="9" opacity=".3"/><path d="M12 3a9 9 0 0 1 9 9"/></svg></span><span class="ok"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path class="ck-draw" d="M5 12l5 5 9-10"/></svg>נשלח</span></button></form>' +
-      '<div class="alt-wa"><a class="wbtn" href="' + waHref(t, second) + '" target="_blank" rel="noopener"><span class="g">' + WAI + '</span><span>או בוואטסאפ<small>עם התוצאה מוכנה בהודעה</small></span></a></div></div>' +
+      lookHtml(key) +
+      '<div class="rnext" id="rnext"><h3 class="q">מה הצעד הבא המתאים לכם?</h3><p class="rsub">ארבע שאלות קצרות, כדי שנכוון אתכם למקום שמתאים לשלב שלכם. אין כאן חובה להשאיר פרטים.</p>' +
+      NEXTQ.map(function (q) {
+        return '<fieldset class="nq" data-k="' + q.k + '"><legend>' + esc(q.q) + '</legend><div class="nopts" role="radiogroup">' +
+          q.o.map(function (o) { return '<button type="button" role="radio" aria-checked="false" class="nopt" data-v="' + o[0] + '">' + esc(o[1]) + '</button>'; }).join('') + '</div></fieldset>';
+      }).join('') +
+      '<div class="nrow"><button class="pbtn lg" id="nextGo" type="button" disabled>הציגו לי את הצעד הבא <span class="chip">' + ARW.replace('class="ar"', 'class="a"') + ARW.replace('class="ar"', 'class="b"') + '</span></button><span class="nhint" id="nextHint">ענו על כל השאלות כדי להמשיך</span></div></div>' +
       '<div class="rfoot"><button class="sbtn" id="again" type="button">מילוי מחדש</button><button class="sbtn" id="copy" type="button">העתקת קישור לשיתוף</button><span id="copyNote" class="cnote" aria-live="polite"></span></div>' +
-      '<p class="disclaimer">השאלון כללי ולא מהווה ייעוץ השקעות או ייעוץ מס. לכל סוג השקעה יש סיכונים, והמימון תלוי בבנק, בהון העצמי ובאישור הסופי.</p>';
+      '<p class="disclaimer">' + esc((window.TICO_CONTENT && window.TICO_CONTENT.DISCLAIMER) || 'השאלון כללי ולא מהווה ייעוץ השקעות או ייעוץ מס. לכל סוג השקעה יש סיכונים, והמימון תלוי בבנק, בהון העצמי ובאישור הסופי.') + '</p>';
     focusHead();
     setTimeout(function () { Array.prototype.forEach.call(stage.querySelectorAll('.fit .bar i'), function (b) { b.style.width = b.getAttribute('data-w') + '%'; }); }, reduce ? 0 : 250);
     if (typeof window.gtag === 'function') window.gtag('event', 'quiz_complete', { event_category: 'quiz', event_label: key });
@@ -305,23 +313,31 @@
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { note.textContent = 'הועתק'; }, function () { note.textContent = text; });
       else note.textContent = text;
     });
-    D.getElementById('lead').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var nm = D.getElementById('nm').value.trim(), raw = D.getElementById('ph').value.trim(), dg = raw.replace(/[^\d]/g, ''), ok = true;
-      D.getElementById('nmE').textContent = nm.length < 2 ? 'כתבו שם מלא' : ''; if (nm.length < 2) ok = false;
-      var phOk = /^0\d{8,9}$/.test(dg) || /^972\d{8,9}$/.test(dg);
-      D.getElementById('phE').textContent = phOk ? '' : 'כתבו מספר טלפון תקין, למשל 050-0000000'; if (!phOk) ok = false;
-      if (ok && !D.getElementById('cs').checked) { ok = false; D.getElementById('phE').textContent = 'סמנו את אישור הפרטיות'; }
-      if (!ok) return;
-      var sb = D.getElementById('sub'); sb.dataset.s = 'loading';
-      var scores = ORDER.map(function (k) { return TYPES[k].short + ' ' + c.total[k].toFixed(1); }).join(', ');
-      var said = answers.map(function (a) { return a.why + ': ' + a.label; }).join(' | ');
-      var payload = { full_name: nm, phone_number: raw, page_source: 'investor-type', process: 'שאלון סוג משקיע', answers: t.name + ' | ' + scores + ' | ' + said };
-      fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }).then(function () {
-        if (typeof window.gtag === 'function') window.gtag('event', 'generate_lead', { event_category: 'form', event_label: 'investor-type' });
-        sb.dataset.s = 'ok';
-        setTimeout(function () { window.location.href = '/thank-you.html'; }, reduce ? 0 : 900);
-      }, function () { sb.dataset.s = 'idle'; D.getElementById('phE').textContent = 'לא הצלחנו לשלוח כרגע. נסו שוב או כתבו לי בוואטסאפ.'; });
+    wireNext(key, t);
+  }
+
+  /* "Next step": four short questions decide which page comes next. Nothing is sent from here; the quiz stays anonymous
+     until the visitor chooses to leave details on the course or meeting page. */
+  function wireNext(key, t) {
+    var box = D.getElementById('rnext'), go = D.getElementById('nextGo'), hint = D.getElementById('nextHint'), sel = {};
+    Array.prototype.forEach.call(box.querySelectorAll('.nopt'), function (b) {
+      b.addEventListener('click', function () {
+        var fs = b.closest('.nq'), k = fs.getAttribute('data-k');
+        Array.prototype.forEach.call(fs.querySelectorAll('.nopt'), function (x) { x.setAttribute('aria-checked', x === b ? 'true' : 'false'); x.classList.toggle('on', x === b); });
+        sel[k] = b.getAttribute('data-v');
+        var done = NEXTQ.every(function (q) { return sel[q.k]; });
+        go.disabled = !done; hint.textContent = done ? '' : 'ענו על כל השאלות כדי להמשיך';
+      });
+    });
+    go.addEventListener('click', function () {
+      if (go.disabled) return;
+      var r = window.TicoRoute.route(sel);
+      var params = new URLSearchParams(location.search), src = params.get('src') || '';
+      var ctx = { type: key, typeName: t.name, eq: sel.eq, stage: sel.stage, support: sel.support, field: sel.field, route: r.id, guidedFirst: r.guidedFirst, src: src, ts: Date.now() };
+      try { sessionStorage.setItem('ticoFunnel', JSON.stringify(ctx)); } catch (e) {}
+      if (typeof window.gtag === 'function') window.gtag('event', 'quiz_route', { event_category: 'quiz', event_label: r.id + ':' + key, route: r.id, quiz_type: key, src: src });
+      var q = new URLSearchParams({ t: key }); if (src) q.set('src', src); if (r.guidedFirst) q.set('gf', '1');
+      window.location.href = r.path + '?' + q.toString();
     });
   }
 
