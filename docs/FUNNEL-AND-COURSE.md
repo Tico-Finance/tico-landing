@@ -12,8 +12,8 @@ Status: **built, not published.** Everything is on branch `claude/wizardly-goldb
 | works in the field | `/investor-type/pro/` |
 | learn alone | `/investor-type/learn/` |
 | short course | `/course/` |
-| guided, stage not "just curious", equity not under 100K (or not stated) | `/investor-type/meeting/` |
-| guided but not ready | `/course/?gf=1` (start with the course, then meet) |
+| guided, stage not "just curious", equity 200K or more (or not stated) | `/investor-type/meeting/` |
+| guided but not ready | `/course/?gf=1` (start with the course, or the paid 45-minute strategy session at `/investor-type/strategy/`) |
 
 The quiz itself sends no personal data. Details are collected only on the meeting form (and by the card processor on payment). Anonymous analytics events: `quiz_complete`, `quiz_route`, `funnel_view`, `learn_topic`, `begin_checkout`, `generate_lead`.
 
@@ -45,7 +45,7 @@ The routing function is pure (`assets/js/funnel-route.js`) and was checked for a
 - [ ] Course recorded, video ids and tool links filled in `api/_course-data.js`; final length confirmed before claiming "under an hour and a half".
 - [ ] Every sentence on every new page reviewed (education only, no promises). Items marked "להחלטה" in the pages are open decisions: VAT wording, delivery time, refund and cancellation terms (check consumer-law rules for digital content), course name.
 - [ ] Meeting page: confirm the stated price range and what the guidance includes.
-- [ ] Equity threshold for the meeting route (currently: under 100K goes to the course).
+- [x] Equity threshold for the meeting route: 200K (decided).
 - [ ] Add a course section to `terms.html` and make sure `privacy.html` covers the new data.
 - [ ] Set `COURSE_SECRET`, `COURSE_USERS`, `paymentUrl`; set `draft: false` in `assets/js/funnel-config.js`.
 - [ ] Decide linking: Meta automation links, and whether to list the quiz on `/investors/`.
